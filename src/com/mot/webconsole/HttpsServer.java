@@ -31,7 +31,7 @@ public class HttpsServer extends Thread
 	
 	public HttpsServer(WebConsole plugin)
 	{
-		
+		this.plugin = plugin;
 	}
 
 	@Override
@@ -92,20 +92,19 @@ public class HttpsServer extends Thread
 					writer.newLine();
 					writer.flush();
 					
-					transmitFile(out, "login.html");
+					transmitFile(out, "plugins/WebConsole/login.html");
 				}
 				else if(args[1].equals("/log"))
 				{
 					//Header
 					writer.write("HTTP/1.1 200 OK");
 					writer.newLine();
-					writer.write("Content-Type: text/html");
+					writer.write("Content-Type: text/plain");
 					writer.newLine();
 					writer.newLine();
+					writer.flush();
 					
-					writer.write("<html><head><title>MC Web Console - Log</title></head>");
-					writer.write("<body>");
-					
+					transmitFile(out, "server.log");
 				}
 			}
 		} catch (Exception e)
@@ -116,7 +115,7 @@ public class HttpsServer extends Thread
 	
 	public void transmitFile(OutputStream out, String filename) throws Exception
 	{
-		FileInputStream fin = new FileInputStream("plugins/WebConsole/"+filename);
+		FileInputStream fin = new FileInputStream(filename);
 		
 		byte[] buffer = new byte[1024];
 		int n = 0;

@@ -1,5 +1,7 @@
 package com.mot.webconsole;
 
+import java.util.logging.Logger;
+
 import org.bukkit.plugin.java.JavaPlugin;
 
 public class WebConsole extends JavaPlugin
@@ -13,7 +15,6 @@ public class WebConsole extends JavaPlugin
 
 	@Override
 	public void onEnable() {
-		new HttpsServer().start();
+		new HttpsServer(this).start();
 	}
-
 }
