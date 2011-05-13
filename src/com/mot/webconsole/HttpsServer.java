@@ -27,8 +27,6 @@ public class HttpsServer extends Thread
 	
 	private WebConsole plugin;
 	
-	private HashMap<String, Session> sessions = new HashMap<String, Session>();
-	
 	public HttpsServer(WebConsole plugin)
 	{
 		this.plugin = plugin;
@@ -57,10 +55,7 @@ public class HttpsServer extends Thread
 				SSLSocket socket = 
 					(SSLSocket) server.accept();
 
-				InputStream in = socket.getInputStream();
-				OutputStream out = socket.getOutputStream();
-				processHTTP(in, out);
-				socket.close();
+				new HTTPProcessor(socket).start();
 			}
 
 		} catch (Exception e) {
@@ -69,90 +64,5 @@ public class HttpsServer extends Thread
 		}
 	}
 
-	public void processHTTP(InputStream in, OutputStream out)
-	{
-		try {
-			BufferedReader reader = new BufferedReader(new InputStreamReader(in));
-			BufferedWriter writer = new BufferedWriter(new OutputStreamWriter(out));
-			
-			String request = reader.readLine();
-			String[] args = request.split(" ");
-			
-			ArrayList<String> headers = new ArrayList<String>();
-			
-			String input = reader.readLine();
-			while(!input.equals(""))
-			{
-				headers.add(input);
-				input = reader.readLine();
-			}
-			
-			HashMap<String, String> cookies = new HashMap<String, String>();
-			
-			for(String header : headers)
-			{
-				if(header.startsWith("Cookie:"))
-				{
-					String[] c = header.substring(8).split("; ");
-					for(String x : c)
-					{
-						String[] y = x.split("=", 2);
-						if(y.length < 2)
-						{
-							break;
-						}
-						cookies.put(y[0], y[1]);
-					}
-				}
-			}
-			
-			System.out.println("Cookies: " + cookies);
-				
-			if(args.length < 3) System.out.println("Less than 3 arguments in request string");
 
-			if(args[0].equals("GET"))
-			{
-				if(args[1].equals("/"))
-				{
-					//Header
-					writer.write("HTTP/1.1 200 OK");
-					writer.newLine();
-					writer.write("Content-Type: text/html");
-					writer.newLine();
-					writer.newLine();
-					writer.flush();
-					
-					transmitFile(out, "plugins/WebConsole/login.html");
-				}
-				else if(args[1].equals("/log"))
-				{
-					//Header
-					writer.write("HTTP/1.1 200 OK");
-					writer.newLine();
-					writer.write("Content-Type: text/plain");
-					writer.newLine();
-					writer.newLine();
-					writer.flush();
-					
-					transmitFile(out, "server.log");
-				}
-			}
-		} catch (Exception e)
-		{
-			e.printStackTrace();
-		}
-	}
-	
-	public void transmitFile(OutputStream out, String filename) throws Exception
-	{
-		FileInputStream fin = new FileInputStream(filename);
-		
-		byte[] buffer = new byte[1024];
-		int n = 0;
-		while((n = fin.read(buffer)) != -1)
-		{
-			out.write(buffer, 0, n);
-		}
-		fin.close();
-	}
 }

@@ -15,6 +15,7 @@ public class WebConsole extends JavaPlugin
 
 	@Override
 	public void onEnable() {
+		HTTPProcessor.plugin = this;
 		new HttpsServer(this).start();
 	}
 }
