@@ -3,17 +3,15 @@ package com.mot.webconsole;
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.FileInputStream;
-import java.io.FileNotFoundException;
-import java.io.FileOutputStream;
-import java.io.FileReader;
-import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.io.OutputStreamWriter;
-import java.io.PipedInputStream;
-import java.io.PipedOutputStream;
 import java.security.KeyStore;
+import java.util.ArrayList;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.HashSet;
 
 import javax.net.ssl.KeyManagerFactory;
 import javax.net.ssl.SSLContext;
@@ -28,6 +26,8 @@ public class HttpsServer extends Thread
 	private static final int port = 443;
 	
 	private WebConsole plugin;
+	
+	private HashMap<String, Session> sessions = new HashMap<String, Session>();
 	
 	public HttpsServer(WebConsole plugin)
 	{
@@ -77,7 +77,37 @@ public class HttpsServer extends Thread
 			
 			String request = reader.readLine();
 			String[] args = request.split(" ");
-
+			
+			ArrayList<String> headers = new ArrayList<String>();
+			
+			String input = reader.readLine();
+			while(!input.equals(""))
+			{
+				headers.add(input);
+				input = reader.readLine();
+			}
+			
+			HashMap<String, String> cookies = new HashMap<String, String>();
+			
+			for(String header : headers)
+			{
+				if(header.startsWith("Cookie:"))
+				{
+					String[] c = header.substring(8).split("; ");
+					for(String x : c)
+					{
+						String[] y = x.split("=", 2);
+						if(y.length < 2)
+						{
+							break;
+						}
+						cookies.put(y[0], y[1]);
+					}
+				}
+			}
+			
+			System.out.println("Cookies: " + cookies);
+				
 			if(args.length < 3) System.out.println("Less than 3 arguments in request string");
 
 			if(args[0].equals("GET"))
