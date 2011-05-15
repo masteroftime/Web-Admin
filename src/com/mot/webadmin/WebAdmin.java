@@ -1,10 +1,10 @@
-package com.mot.webconsole;
+package com.mot.webadmin;
 
 import java.util.logging.Logger;
 
 import org.bukkit.plugin.java.JavaPlugin;
 
-public class WebConsole extends JavaPlugin
+public class WebAdmin extends JavaPlugin
 {
 
 	@Override

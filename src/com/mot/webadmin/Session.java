@@ -1,4 +1,4 @@
-package com.mot.webconsole;
+package com.mot.webadmin;
 
 import java.security.SecureRandom;
 import java.util.Calendar;

@@ -1,4 +1,4 @@
-package com.mot.webconsole;
+package com.mot.webadmin;
 
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
@@ -21,13 +21,13 @@ import javax.net.ssl.SSLSocket;
 
 public class HttpsServer extends Thread
 {
-	private static final String keystore = "plugins/WebConsole/store.ks";
+	private static final String keystore = "plugins/Web Admin/store.ks";
 	private static final String passwd = "keypwd";
 	private static final int port = 443;
 	
-	private WebConsole plugin;
+	private WebAdmin plugin;
 	
-	public HttpsServer(WebConsole plugin)
+	public HttpsServer(WebAdmin plugin)
 	{
 		this.plugin = plugin;
 	}

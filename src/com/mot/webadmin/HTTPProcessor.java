@@ -1,8 +1,10 @@
-package com.mot.webconsole;
+package com.mot.webadmin;
 
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
+import java.io.File;
 import java.io.FileInputStream;
+import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
@@ -19,7 +21,7 @@ public class HTTPProcessor extends Thread
 	public static String user = "martin";
 	public static String password = "hellomc";
 	
-	public static WebConsole plugin;
+	public static WebAdmin plugin;
 	public static HashMap<String, Session> sessions = new HashMap<String, Session>();
 	
 	private Socket socket;
@@ -99,40 +101,50 @@ public class HTTPProcessor extends Thread
 					session = sessions.get(id);
 				}
 				
-				if(args[1].equals("/"))
+				if(session != null)
 				{
-					if(session != null)
+					if(args[1].equals("/log"))
 					{
-						writer.write("HTTP/1.1 200 OK");
-						writer.newLine();
-						writer.write("Content-Type: text/plain");
-						writer.newLine();
-						writer.newLine();
-						writer.flush();
-						
-						transmitFile("server.log");
+						sendFile(new File("server.log"));
 					}
 					else
 					{
-						writer.write("HTTP/1.1 200 OK");
-						writer.newLine();
-						writer.write("Content-Type: text/html");
-						writer.newLine();
-						writer.newLine();
-						writer.flush();
 
-						transmitFile("plugins/WebConsole/login.html");
+						File f = new File("plugins/Web Admin/html"+args[1]);
+						
+						if(f.exists())
+						{
+							if(f.isDirectory())
+							{
+								sendFile(new File(f.getAbsolutePath()+"/index.html"));
+							}
+							else
+							{
+								sendFile(f);
+							}
+						}
+						else
+						{
+							writer.write("HTTP/1.1 404 Page not Found");
+							writer.newLine();
+							writer.write("Content-Type: text/plain");
+							writer.newLine();
+							writer.newLine();
+							writer.write("The page you requested was not found.");
+							writer.flush();
+						}
 					}
 				}
 				else
 				{
-					writer.write("HTTP/1.1 404 Page not Found");
+					writer.write("HTTP/1.1 200 OK");
 					writer.newLine();
-					writer.write("Content-Type: text/plain");
+					writer.write("Content-Type: text/html");
 					writer.newLine();
 					writer.newLine();
-					writer.write("The page you requested was not found.");
 					writer.flush();
+
+					transmitFile("plugins/Web Admin/html/login.html");
 				}
 			}
 			else if(args[0].equals("POST"))
@@ -161,12 +173,12 @@ public class HTTPProcessor extends Thread
 					writer.newLine();
 					writer.write("Content-Type: text/html");
 					writer.newLine();
-					writer.flush();
-					setCookie("MCSSID", s.getID());
+					writer.write(setCookieString("MCSSID", s.getID()));
+					writer.newLine();
 					writer.newLine();
 					writer.flush();
 
-					transmitFile("plugins/WebConsole/redirect.html");
+					transmitFile("plugins/Web Admin/html/redirect.html");
 				}
 				else
 				{
@@ -177,7 +189,7 @@ public class HTTPProcessor extends Thread
 					writer.newLine();
 					writer.flush();
 
-					transmitFile("plugins/WebConsole/login_failed.html");
+					transmitFile("plugins/Web Admin/html/login_failed.html");
 				}
 			}
 		} catch (Exception e)
@@ -186,9 +198,46 @@ public class HTTPProcessor extends Thread
 		}
 	}
 	
-	public void transmitFile(String filename) throws Exception
+	/**
+	 * Sends the file to the client with an appropriate HTTP Header.
+	 * @param file The file to transmit
+	 * @throws Exception
+	 */
+	public void sendFile(File file) throws Exception
 	{
-		FileInputStream fin = new FileInputStream(filename);
+		if(!file.isDirectory())
+		{
+			BufferedWriter writer = new BufferedWriter(new OutputStreamWriter(out));
+			
+			String[] s = file.getName().split("\\.");
+			String extension = s[s.length-1];
+			String mime = "text/plain";
+			
+			if(extension.equals("html")) mime = "text/html";
+			else if(extension.equals("js")) mime = "text/javascript";
+			else if(extension.equals("css")) mime = "text/css";
+			else if(extension.equals("gif")) mime = "image/gif";
+			else if(extension.equals("jpg")) mime = "image/jpeg";
+			else if(extension.equals("png")) mime = "image/png";
+			
+			writer.write("HTTP/1.1 200 OK");
+			writer.newLine();
+			writer.write("Content-Type: "+mime);
+			writer.newLine();
+			writer.newLine();
+			writer.flush();
+			
+			transmitFile(file);
+		}
+	}
+	
+	/**
+	 * Writes the content of the given file to the client;
+	 * @throws Exception
+	 */
+	public void transmitFile(File file) throws Exception
+	{
+		FileInputStream fin = new FileInputStream(file);
 		
 		byte[] buffer = new byte[1024];
 		int n = 0;
@@ -199,6 +248,20 @@ public class HTTPProcessor extends Thread
 		fin.close();
 	}
 	
+	/**
+	 * Writes the content of the given file to the client;
+	 * @throws Exception
+	 */
+	public void transmitFile(String filename) throws Exception
+	{
+		transmitFile(new File(filename));
+	}
+	
+	/**
+	 * Writes http header field to set cookie to output stream.
+	 * @param name
+	 * @param value
+	 */
 	public void setCookie(String name, String value)
 	{
 		try {
@@ -206,6 +269,17 @@ public class HTTPProcessor extends Thread
 		} catch (IOException e) {
 			e.printStackTrace();
 		}
+	}
+	
+	/**
+	 * creates a string which can be added to the http header to set the cookie
+	 * with the given parameters
+	 * @param name The name of the cookie
+	 * @param value The value of the cookie
+	 */
+	public String setCookieString(String name, String value)
+	{
+		return "Set-Cookie: "+name+"="+value+"\n";
 	}
 	
 	public Session handleLogin(String user, String password)
