@@ -11,8 +11,11 @@ import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.io.OutputStreamWriter;
 import java.net.Socket;
+import java.text.DateFormat;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.HashMap;
+import java.util.logging.LogRecord;
 
 import javax.net.ssl.SSLSocket;
 
@@ -34,6 +37,7 @@ public class HTTPProcessor extends Thread
 	
 	public HTTPProcessor(SSLSocket socket)
 	{
+		super("HTTP Processor");
 		try {
 			this.socket = socket;
 			in = socket.getInputStream();
@@ -106,6 +110,35 @@ public class HTTPProcessor extends Thread
 					if(args[1].equals("/log"))
 					{
 						sendFile(new File("server.log"));
+					}
+					else if(args[1].startsWith("/cmdline"))
+					{
+						if(session.getLastMessage() >= LogHandler.lastTime)
+						{
+							synchronized (this) {
+								LogHandler.waiting.add(this);
+								this.wait();
+							}
+						}
+						
+						writer.write("HTTP/1.1 200 OK");
+						writer.newLine();
+						writer.write("Content-Type: text/html");
+						writer.newLine();
+						writer.newLine();
+						
+						long time = new Date().getTime();
+						
+						for(LogRecord lr : LogHandler.getMessagesSince(session.getLastMessage()))
+						{
+							DateFormat format = DateFormat.getTimeInstance();
+							String log = "<div class='out'>"+format.format(new Date(lr.getMillis()))+"["+lr.getLevel().toString()+"]: "+lr.getMessage()+"</div><br>";
+							writer.write(log);
+							writer.newLine();
+						}
+						
+						session.setLastMessage(time);
+						writer.flush();
 					}
 					else
 					{

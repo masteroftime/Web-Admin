@@ -29,6 +29,7 @@ public class HttpsServer extends Thread
 	
 	public HttpsServer(WebAdmin plugin)
 	{
+		super("Https Server");
 		this.plugin = plugin;
 	}
 
@@ -50,7 +51,7 @@ public class HttpsServer extends Thread
 			SSLServerSocket server = 
 				(SSLServerSocket) ssf.createServerSocket(port);
 
-			while(true)
+			while(!WebAdmin.exit)
 			{
 				SSLSocket socket = 
 					(SSLSocket) server.accept();

@@ -11,6 +11,7 @@ public class Session
 	
 	private String id;
 	private Calendar expires;
+	private long lastMessage;
 	
 	public Session()
 	{
@@ -35,5 +36,15 @@ public class Session
 	public String getID()
 	{
 		return this.id;
+	}
+	
+	public long getLastMessage()
+	{
+		return lastMessage;
+	}
+	
+	public void setLastMessage(long time)
+	{
+		this.lastMessage = time;
 	}
 }
