@@ -2,8 +2,6 @@ package com.mot.webadmin;
 
 import java.security.SecureRandom;
 import java.util.Calendar;
-import java.util.Date;
-import java.util.Random;
 
 public class Session 
 {	
@@ -11,7 +9,7 @@ public class Session
 	
 	private String id;
 	private Calendar expires;
-	private long lastMessage;
+	private int lastMessage;
 	
 	public Session()
 	{
@@ -38,13 +36,13 @@ public class Session
 		return this.id;
 	}
 	
-	public long getLastMessage()
+	public int getLastMessage()
 	{
 		return lastMessage;
 	}
 	
-	public void setLastMessage(long time)
+	public void setLastMessage(int id)
 	{
-		this.lastMessage = time;
+		this.lastMessage = id;
 	}
 }

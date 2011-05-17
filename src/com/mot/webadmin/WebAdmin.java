@@ -1,12 +1,18 @@
 package com.mot.webadmin;
 
-import java.util.concurrent.atomic.AtomicBoolean;
+import java.lang.reflect.Field;
 
+import net.minecraft.server.MinecraftServer;
+
+import org.bukkit.craftbukkit.CraftServer;
 import org.bukkit.plugin.java.JavaPlugin;
 
 public class WebAdmin extends JavaPlugin
 {
-	private LogHandler logger;
+	public static WebAdmin plugin;
+	public static MinecraftServer mcserver;
+	
+	private MessageHandler logger;
 	private HttpsServer server;
 	
 	public volatile static boolean exit = false;
@@ -18,7 +24,7 @@ public class WebAdmin extends JavaPlugin
 		
 		getServer().getLogger().removeHandler(logger);
 		
-		for(HTTPProcessor p : LogHandler.waiting)
+		for(HTTPProcessor p : MessageHandler.waiting)
 		{
 			p.interrupt();
 		}
@@ -26,11 +32,19 @@ public class WebAdmin extends JavaPlugin
 
 	@Override
 	public void onEnable() {
-		logger = new LogHandler();
+		try {
+			Field cfield = CraftServer.class.getDeclaredField("console");
+			cfield.setAccessible(true);
+			mcserver = (MinecraftServer) cfield.get((CraftServer)getServer());
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+		
+		logger = new MessageHandler();
 		getServer().getLogger().addHandler(logger);
 		
-		HTTPProcessor.plugin = this;
-		server = new HttpsServer(this);
+		plugin = this;
+		server = new HttpsServer();
 		server.start();
 	}
 }

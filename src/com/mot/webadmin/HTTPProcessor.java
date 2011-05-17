@@ -4,7 +4,6 @@ import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileInputStream;
-import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
@@ -15,16 +14,21 @@ import java.text.DateFormat;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.logging.Level;
 import java.util.logging.LogRecord;
 
 import javax.net.ssl.SSLSocket;
 
-public class HTTPProcessor extends Thread
+import net.minecraft.server.ICommandListener;
+
+import org.bukkit.Server;
+import org.bukkit.command.CommandSender;
+
+public class HTTPProcessor extends Thread implements CommandSender, ICommandListener
 {
 	public static String user = "martin";
 	public static String password = "hellomc";
 	
-	public static WebAdmin plugin;
 	public static HashMap<String, Session> sessions = new HashMap<String, Session>();
 	
 	private Socket socket;
@@ -37,7 +41,7 @@ public class HTTPProcessor extends Thread
 	
 	public HTTPProcessor(SSLSocket socket)
 	{
-		super("HTTP Processor");
+		super("Web Admin");
 		try {
 			this.socket = socket;
 			in = socket.getInputStream();
@@ -96,15 +100,15 @@ public class HTTPProcessor extends Thread
 			}
 				
 			if(args.length < 3) System.out.println("Less than 3 arguments in request string");
+			
+			if(cookies.containsKey("MCSSID"))
+			{
+				String id = cookies.get("MCSSID");
+				session = sessions.get(id);
+			}
 
 			if(args[0].equals("GET"))
-			{
-				if(cookies.containsKey("MCSSID"))
-				{
-					String id = cookies.get("MCSSID");
-					session = sessions.get(id);
-				}
-				
+			{				
 				if(session != null)
 				{
 					if(args[1].equals("/log"))
@@ -113,10 +117,10 @@ public class HTTPProcessor extends Thread
 					}
 					else if(args[1].startsWith("/cmdline"))
 					{
-						if(session.getLastMessage() >= LogHandler.lastTime)
+						if(session.getLastMessage() >= MessageHandler.last)
 						{
 							synchronized (this) {
-								LogHandler.waiting.add(this);
+								MessageHandler.waiting.add(this);
 								this.wait();
 							}
 						}
@@ -127,17 +131,15 @@ public class HTTPProcessor extends Thread
 						writer.newLine();
 						writer.newLine();
 						
-						long time = new Date().getTime();
+						int last = MessageHandler.last;
 						
-						for(LogRecord lr : LogHandler.getMessagesSince(session.getLastMessage()))
+						for(String msg : MessageHandler.getMessagesSince(session.getLastMessage()))
 						{
-							DateFormat format = DateFormat.getTimeInstance();
-							String log = "<div class='out'>"+format.format(new Date(lr.getMillis()))+"["+lr.getLevel().toString()+"]: "+lr.getMessage()+"</div><br>";
-							writer.write(log);
+							writer.write(msg);
 							writer.newLine();
 						}
 						
-						session.setLastMessage(time);
+						session.setLastMessage(last);
 						writer.flush();
 					}
 					else
@@ -198,31 +200,42 @@ public class HTTPProcessor extends Thread
 					post.put(x[0], x[1]);
 				}
 				
-				Session s = handleLogin(post.get("username"), post.get("password"));
-				
-				if(s != null)
+				if(session == null)
 				{
-					writer.write("HTTP/1.1 200 OK");
-					writer.newLine();
-					writer.write("Content-Type: text/html");
-					writer.newLine();
-					writer.write(setCookieString("MCSSID", s.getID()));
-					writer.newLine();
-					writer.newLine();
-					writer.flush();
+					Session s = handleLogin(post.get("username"), post.get("password"));
 
-					transmitFile("plugins/Web Admin/html/redirect.html");
+					if(s != null)
+					{
+						writer.write("HTTP/1.1 200 OK");
+						writer.newLine();
+						writer.write("Content-Type: text/html");
+						writer.newLine();
+						writer.write(setCookieString("MCSSID", s.getID()));
+						writer.newLine();
+						writer.newLine();
+						writer.flush();
+
+						transmitFile("plugins/Web Admin/html/redirect.html");
+					}
+					else
+					{
+						writer.write("HTTP/1.1 200 OK");
+						writer.newLine();
+						writer.write("Content-Type: text/html");
+						writer.newLine();
+						writer.newLine();
+						writer.flush();
+
+						transmitFile("plugins/Web Admin/html/login_failed.html");
+					}
 				}
 				else
 				{
-					writer.write("HTTP/1.1 200 OK");
-					writer.newLine();
-					writer.write("Content-Type: text/html");
-					writer.newLine();
-					writer.newLine();
-					writer.flush();
-
-					transmitFile("plugins/Web Admin/html/login_failed.html");
+					if(args[1].equals("/command"))
+					{
+						String command = post.get("command");
+						WebAdmin.mcserver.issueCommand(command, this);
+					}
 				}
 			}
 		} catch (Exception e)
@@ -340,5 +353,21 @@ public class HTTPProcessor extends Thread
 		}
 		
 		return null;
+	}
+
+	@Override
+	public Server getServer() {
+		return null;
+	}
+
+	@Override
+	public boolean isOp() {
+		return true;
+	}
+
+	@Override
+	public void sendMessage(String msg) 
+	{
+		MessageHandler.addMessage(msg);
 	}
 }
