@@ -3,16 +3,15 @@
   <title>MC Web Console</title>
   <script type="text/javascript" src="jquery.js"></script>
   <script type="text/javascript" src="cmd.js"></script>
-  <style type="text/css">
-  	.out {
-  		display: none;
-  		height: 25px;
-  	}
-  </style>
+  <link href="/style/main.css" rel="stylesheet" type="text/css">
  </head>
  <body>
- <div id="main"></div>
- <div>
+ <div class="main" id="console">
+ <div class="title">
+  <h1>Bukkit Web Admin</h1>
+ </div>
+ <div class="menu"><a href="#" id="clear">Clear</a> | <a href="/logout">Logout</a></div>
+ <div id="output"></div>
   <form id="form" action="#">
    <input type="text" id="input"/>
   </form>

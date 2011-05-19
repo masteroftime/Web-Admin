@@ -1,19 +1,25 @@
 <html>
  <head>
   <title>MC Web Console - Login</title>
+  <link href="/style/main.css" rel="stylesheet" type="text/css"/>
  </head>
  <body>
- <p style="color:red">Login Failed</p>
+ <div class="main" id="smallpage">
+ <div class="title">
+  <h1>MC Web Admin</h1>
+ </div>
+ <p class="error">Failed to log in. Try again!</p>
  <form action="" method="post">
   <p>
   	Username: <br>
   	<input type="text" name="username"/>
   </p>
   <p>
-    Password:
+    Password: <br>
     <input type="password" name="password"/>
   </p>
   <input type="submit"/>
   </form>
+  </div>
  </body>
 </html>

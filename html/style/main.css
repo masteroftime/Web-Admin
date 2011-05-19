@@ -1,0 +1,74 @@
+@charset "utf-8";
+/* CSS Document */
+	
+/* Main page layout*/
+	
+.main {
+	position:relative;
+	margin-left:auto;
+	margin-right:auto;
+	margin-top:auto;
+	margin-bottom:auto;
+	border: thin ridge #000;
+	background-color: #EEE;
+}
+body {
+	background-color: #999;
+
+}
+
+
+#smallpage {
+	margin-top:150px;
+	text-align: center;
+	width:350;
+	height:300;
+}
+
+.title {
+	padding:10px;
+	margin:0px;
+	background-color: #06C;
+	height: 50px;
+	text-align: center;
+}
+.menu {
+	background:#CCC;
+	text-align:right;
+	padding:3px;
+}
+
+/* Command line layout */
+
+#console {
+	width: 960px;
+}
+
+
+#output {
+	overflow:auto;
+	height:500px;
+	margin-bottom:50px;
+	padding-left:5px;
+	padding-right:5px;
+}
+
+#form {
+	position: absolute;
+	left:0px;
+	bottom:0px;
+}
+
+#input {
+	width:960px;
+}
+
+.out {
+  	display: none;
+  	height: 24px;
+}
+
+.error {
+	color: red;
+	font-weight: bold;
+}

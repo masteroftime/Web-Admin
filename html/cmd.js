@@ -2,8 +2,10 @@
 function reload(data)
 {
 	var item = $(data);
-	item.appendTo('#main');
-	item.slideDown('fast');
+	item.appendTo('#output');
+	item.slideDown('fast', function() {
+		$("#output").attr({ scrollTop: $("#output").attr("scrollHeight") });
+	});
 	
 	$.get("/cmdline", function(data) {
 		reload(data);
@@ -16,12 +18,17 @@ $('document').ready(function() {
 		event.preventDefault();
 		
 		var item = $("<div class='out'> >"+$('#input').val()+"</div>");
-		item.appendTo('#main');
+		item.appendTo('#output');
 		item.slideDown('fast');
 		$.post("/command", "command="+$('#input').val());
 		
 		$('#input').val("");
 	});
 	
-	reload("<div class='out'>MC Web Console v0.0</div>");
+	$('#clear').click(function (event) {
+		event.preventDefault();
+		$('#output').empty();
+	});
+	
+	reload("<div class='out'>Started MC Web Console v0.0</div>");
 });

@@ -10,14 +10,8 @@ import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.io.OutputStreamWriter;
 import java.net.Socket;
-import java.text.DateFormat;
 import java.util.ArrayList;
-import java.util.Date;
 import java.util.HashMap;
-import java.util.logging.Level;
-import java.util.logging.LogRecord;
-
-import javax.net.ssl.SSLSocket;
 
 import net.minecraft.server.ICommandListener;
 
@@ -39,7 +33,7 @@ public class HTTPProcessor extends Thread implements CommandSender, ICommandList
 	private ArrayList<String> headers;
 	private HashMap<String, String> cookies;
 	
-	public HTTPProcessor(SSLSocket socket)
+	public HTTPProcessor(Socket socket)
 	{
 		super("Web Admin");
 		try {
@@ -69,6 +63,12 @@ public class HTTPProcessor extends Thread implements CommandSender, ICommandList
 			BufferedWriter writer = new BufferedWriter(new OutputStreamWriter(out));
 			
 			String request = reader.readLine();
+			
+			if(request == null)
+			{
+				return;
+			}
+			
 			String[] args = request.split(" ");
 			
 			headers = new ArrayList<String>();
@@ -142,6 +142,21 @@ public class HTTPProcessor extends Thread implements CommandSender, ICommandList
 						session.setLastMessage(last);
 						writer.flush();
 					}
+					else if(args[1].equals("/logout"))
+					{
+						sessions.remove(session);
+						
+						writer.write("HTTP/1.1 200 OK");
+						writer.newLine();
+						writer.write("Content-Type: text/html");
+						writer.newLine();
+						writer.write(deleteCookieString("MCSSID"));
+						writer.newLine();
+						writer.newLine();
+						writer.flush();
+
+						transmitFile("plugins/Web Admin/html/logout.html");
+					}
 					else
 					{
 
@@ -162,12 +177,45 @@ public class HTTPProcessor extends Thread implements CommandSender, ICommandList
 						{
 							writer.write("HTTP/1.1 404 Page not Found");
 							writer.newLine();
+							writer.write("Content-Type: text/html");
+							writer.newLine();
+							writer.newLine();
+							writer.flush();
+							
+							transmitFile("plugins/Web Admin/html/404.html");
+						}
+					}
+				}
+				else if(args[1].startsWith("/style"))
+				{
+					File f = new File("plugins/Web Admin/html"+args[1]);
+					
+					if(f.exists())
+					{
+						if(f.isDirectory())
+						{
+							writer.write("HTTP/1.1 404 Page not Found");
+							writer.newLine();
 							writer.write("Content-Type: text/plain");
 							writer.newLine();
 							writer.newLine();
 							writer.write("The page you requested was not found.");
 							writer.flush();
 						}
+						else
+						{
+							sendFile(f);
+						}
+					}
+					else
+					{
+						writer.write("HTTP/1.1 404 Page not Found");
+						writer.newLine();
+						writer.write("Content-Type: text/plain");
+						writer.newLine();
+						writer.newLine();
+						writer.write("The page you requested was not found.");
+						writer.flush();
 					}
 				}
 				else
@@ -304,20 +352,6 @@ public class HTTPProcessor extends Thread implements CommandSender, ICommandList
 	}
 	
 	/**
-	 * Writes http header field to set cookie to output stream.
-	 * @param name
-	 * @param value
-	 */
-	public void setCookie(String name, String value)
-	{
-		try {
-			out.write(("Set-Cookie: "+name+"="+value+"\n").getBytes());
-		} catch (IOException e) {
-			e.printStackTrace();
-		}
-	}
-	
-	/**
 	 * creates a string which can be added to the http header to set the cookie
 	 * with the given parameters
 	 * @param name The name of the cookie
@@ -326,6 +360,11 @@ public class HTTPProcessor extends Thread implements CommandSender, ICommandList
 	public String setCookieString(String name, String value)
 	{
 		return "Set-Cookie: "+name+"="+value+"\n";
+	}
+	
+	public String deleteCookieString(String name)
+	{
+		return "Set-Cookie: "+name+"=deleted; expires=Thu, 01-Jan-1970 00:00:01 GMT; httponly; secure;\n";
 	}
 	
 	public Session handleLogin(String user, String password)
