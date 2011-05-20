@@ -11,9 +11,9 @@ import javax.net.ssl.SSLSocket;
 
 public class HttpsServer extends Thread
 {
-	private static final String keystore = "plugins/Web Admin/store.ks";
-	private static final String passwd = "keypwd";
-	private static final int port = 443;
+	public static String keystore = "plugins/Web Admin/store.ks";
+	public static String passwd = "keypwd";
+	public static int port = 443;
 	
 	public HttpsServer()
 	{

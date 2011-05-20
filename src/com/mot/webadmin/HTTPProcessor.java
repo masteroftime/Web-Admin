@@ -21,7 +21,9 @@ import org.bukkit.command.CommandSender;
 public class HTTPProcessor extends Thread implements CommandSender, ICommandListener
 {
 	public static String user = "martin";
-	public static String password = "hellomc";
+	public static byte[] password;
+	
+	public static String setupID;
 	
 	public static HashMap<String, Session> sessions = new HashMap<String, Session>();
 	
@@ -32,6 +34,7 @@ public class HTTPProcessor extends Thread implements CommandSender, ICommandList
 	private Session session;
 	private ArrayList<String> headers;
 	private HashMap<String, String> cookies;
+	private HashMap<String, String> get;
 	
 	public HTTPProcessor(Socket socket)
 	{
@@ -98,8 +101,19 @@ public class HTTPProcessor extends Thread implements CommandSender, ICommandList
 					}
 				}
 			}
-				
-			if(args.length < 3) System.out.println("Less than 3 arguments in request string");
+			
+			get = new HashMap<String, String>();
+			//if request contains ? we store the given parameters in the get map
+			if(args[1].contains("\\?"))
+			{
+				String s = args[1].split("\\?", 2)[1];
+				String[] params = s.split("&");
+				for(String p : params)
+				{
+					String[] val = p.split("=", 2);
+					get.put(val[0], val[1]);
+				}
+			}
 			
 			if(cookies.containsKey("MCSSID"))
 			{
@@ -218,6 +232,19 @@ public class HTTPProcessor extends Thread implements CommandSender, ICommandList
 						writer.flush();
 					}
 				}
+				else if(args[1].startsWith("/setup"))
+				{
+					writer.write("HTTP/1.1 200 OK");
+					writer.newLine();
+					writer.write("Content-Type: text/html");
+					writer.newLine();
+					writer.write(setCookieString("SETUPID", setupID));
+					writer.newLine();
+					writer.newLine();
+					writer.flush();
+
+					transmitFile("plugins/Web Admin/html/setup.html");
+				}
 				else
 				{
 					writer.write("HTTP/1.1 200 OK");
@@ -250,31 +277,73 @@ public class HTTPProcessor extends Thread implements CommandSender, ICommandList
 				
 				if(session == null)
 				{
-					Session s = handleLogin(post.get("username"), post.get("password"));
-
-					if(s != null)
+					if(args[1].startsWith("/setup"))
 					{
-						writer.write("HTTP/1.1 200 OK");
-						writer.newLine();
-						writer.write("Content-Type: text/html");
-						writer.newLine();
-						writer.write(setCookieString("MCSSID", s.getID()));
-						writer.newLine();
-						writer.newLine();
-						writer.flush();
-
-						transmitFile("plugins/Web Admin/html/redirect.html");
+						if(cookies.get("SETUPID").equals(HTTPProcessor.setupID))
+						{
+							String user = post.get("username");
+							String pass = post.get("password");
+							String pass2 = post.get("retype");
+							if(!user.equals("") && !pass.equals(""))
+							{
+								if(pass.equals(pass2))
+								{
+									HTTPProcessor.user = user;
+									HTTPProcessor.password = WebAdmin.password(pass);
+									HTTPProcessor.setupID = null;
+									WebAdmin.plugin.saveProperties();
+									
+									sendFile(new File("plugins/Web Admin/html/setup_success.html"));
+								}
+								else
+								{
+									sendFile(new File("plugins/Web Admin/html/setup_mis.html"));
+								}
+							}
+							else
+							{
+								sendFile(new File("plugins/Web Admin/html/setup_inv.html"));
+							}
+						}
+						else
+						{
+							writer.write("HTTP/1.1 404 Page not Found");
+							writer.newLine();
+							writer.write("Content-Type: text/plain");
+							writer.newLine();
+							writer.newLine();
+							writer.write("The page you requested was not found.");
+							writer.flush();
+						}
 					}
 					else
 					{
-						writer.write("HTTP/1.1 200 OK");
-						writer.newLine();
-						writer.write("Content-Type: text/html");
-						writer.newLine();
-						writer.newLine();
-						writer.flush();
+						Session s = handleLogin(post.get("username"), post.get("password"));
 
-						transmitFile("plugins/Web Admin/html/login_failed.html");
+						if(s != null)
+						{
+							writer.write("HTTP/1.1 200 OK");
+							writer.newLine();
+							writer.write("Content-Type: text/html");
+							writer.newLine();
+							writer.write(setCookieString("MCSSID", s.getID()));
+							writer.newLine();
+							writer.newLine();
+							writer.flush();
+
+							transmitFile("plugins/Web Admin/html/redirect.html");
+						}
+						else
+						{
+							writer.write("HTTP/1.1 200 OK");
+							writer.newLine();
+							writer.write("Content-Type: text/html");
+							writer.newLine();
+							writer.newLine();
+							writer.flush();
+
+							transmitFile("plugins/Web Admin/html/login_failed.html");
+						}
 					}
 				}
 				else
@@ -371,7 +440,7 @@ public class HTTPProcessor extends Thread implements CommandSender, ICommandList
 	{
 		if(user != null && password != null)
 		{
-			if(user.equals(HTTPProcessor.user) && password.equals(HTTPProcessor.password))
+			if(user.equals(HTTPProcessor.user) && WebAdmin.arrayEquals(HTTPProcessor.password,WebAdmin.password(password)))
 			{
 				Session s = new Session();
 				sessions.put(s.getID(), s);
