@@ -4,6 +4,7 @@ import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileInputStream;
+import java.io.FileReader;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
@@ -12,6 +13,7 @@ import java.io.OutputStreamWriter;
 import java.net.Socket;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.Map;
 
 import net.minecraft.server.ICommandListener;
 
@@ -297,12 +299,12 @@ public class HTTPProcessor extends Thread implements CommandSender, ICommandList
 								}
 								else
 								{
-									sendFile(new File("plugins/Web Admin/html/setup_mis.html"));
+									sendParamFile(new File("plugins/Web Admin/html/setup_error.html"), "error", "The given passwords do not match. Try again!");
 								}
 							}
 							else
 							{
-								sendFile(new File("plugins/Web Admin/html/setup_inv.html"));
+								sendParamFile(new File("plugins/Web Admin/html/setup_error.html"), "error", "Invalid username or password!");
 							}
 						}
 						else
@@ -428,6 +430,79 @@ public class HTTPProcessor extends Thread implements CommandSender, ICommandList
 			writer.flush();
 			
 			transmitFile(file);
+		}
+	}
+	
+	/**
+	 * Convenience method for sending a parameterized file with only one parameter.
+	 * @param file
+	 * @param name The name of the parameter
+	 * @param value The value of the parameter
+	 * @throws Exception
+	 */
+	public void sendParamFile(File file, String name, String value) throws Exception
+	{
+		HashMap<String, String> params = new HashMap<String, String>(1);
+		params.put(name, value);
+		sendParamFile(file, params);
+	}
+	
+	/**
+	 * Sends a parameterized file. Such a file contains [@paramname] which 
+	 * are then substituted with the specified parameters in the params map.
+	 * @param file
+	 * @param params
+	 * @throws Exception
+	 */
+	public void sendParamFile(File file, Map<String, String> params) throws Exception
+	{
+		if(!file.isDirectory())
+		{
+			BufferedWriter writer = new BufferedWriter(new OutputStreamWriter(out));
+			
+			String[] s = file.getName().split("\\.");
+			String extension = s[s.length-1];
+			String mime = "text/plain";
+			
+			if(extension.equals("html")) mime = "text/html";
+			else if(extension.equals("js")) mime = "text/javascript";
+			else if(extension.equals("css")) mime = "text/css";
+			else if(extension.equals("gif")) mime = "image/gif";
+			else if(extension.equals("jpg")) mime = "image/jpeg";
+			else if(extension.equals("png")) mime = "image/png";
+			
+			writer.write("HTTP/1.1 200 OK");
+			writer.newLine();
+			writer.write("Content-Type: "+mime);
+			writer.newLine();
+			writer.newLine();
+			
+			BufferedReader reader = new BufferedReader(new FileReader(file));
+			String line;
+			String newline;
+			while((line = reader.readLine()) != null)
+			{
+				if(line.contains("[@"))
+				{
+					s = line.split("\\[\\@");
+					newline = s[0];
+					for(int i = 1; i < s.length; i++)
+					{
+						String[] args = s[1].split("\\]", 2);
+						if(args.length != 2 || !params.containsKey(args[0])) continue;
+						
+						newline += params.get(args[0]) + args[1];
+					}
+					writer.write(newline);
+					writer.newLine();
+				}
+				else
+				{
+					writer.write(line);
+					writer.newLine();
+				}
+			}
+			writer.flush();
 		}
 	}
 	
