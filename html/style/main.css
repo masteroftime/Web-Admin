@@ -25,20 +25,29 @@ body {
 	height:300;
 }
 
+#largepage {
+	text-align: center;
+	width:960;
+	height:550;
+}
+
 .title {
 	padding:10px;
 	margin:0px;
-	background-color: #06C;
+	background-color: #06F;
+	background-image: url('banner.jpg');
+	background-repeat: repeat-x;
 	height: 50px;
 	text-align: center;
 }
+
+/* Command line layout */
+
 .menu {
 	background:#CCC;
 	text-align:right;
 	padding:3px;
 }
-
-/* Command line layout */
 
 #console {
 	width: 960px;

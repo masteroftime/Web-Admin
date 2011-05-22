@@ -104,7 +104,7 @@ public class HTTPProcessor extends Thread implements CommandSender, ICommandList
 			
 			get = new HashMap<String, String>();
 			//if request contains ? we store the given parameters in the get map
-			if(args[1].contains("\\?"))
+			if(args[1].contains("?"))
 			{
 				String s = args[1].split("\\?", 2)[1];
 				String[] params = s.split("&");
@@ -352,6 +352,43 @@ public class HTTPProcessor extends Thread implements CommandSender, ICommandList
 					{
 						String command = post.get("command");
 						WebAdmin.mcserver.issueCommand(command, this);
+					}
+					else if(args[1].startsWith("/config"))
+					{
+						String change = get.get("change");
+						if(change != null)
+						{
+							if(change.equals("user"))
+							{
+								String user = post.get("username");
+								String pass = post.get("password");
+								String pass2 = post.get("retype");
+								if(!user.equals("") && !pass.equals(""))
+								{
+									if(pass.equals(pass2))
+									{
+										HTTPProcessor.user = user;
+										HTTPProcessor.password = WebAdmin.password(pass);
+										HTTPProcessor.setupID = null;
+										WebAdmin.plugin.saveProperties();
+
+										sendFile(new File("plugins/Web Admin/html/settings.html"));
+									}
+									else
+									{
+										sendFile(new File("plugins/Web Admin/html/settings.html"));
+									}
+								}
+								else
+								{
+									sendFile(new File("plugins/Web Admin/html/settings.html"));
+								}
+							}
+						}
+						else
+						{
+							sendFile(new File("plugins/Web Admin/html/404.html"));
+						}
 					}
 				}
 			}

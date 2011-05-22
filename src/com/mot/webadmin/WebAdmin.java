@@ -99,7 +99,7 @@ public class WebAdmin extends JavaPlugin
 					Desktop d = Desktop.getDesktop();
 					if(d.isSupported(Action.BROWSE))
 					{
-						d.browse(new URI("https://localhost/setup?"+HTTPProcessor.setupID));
+						d.browse(new URI("https://localhost/setup?id="+HTTPProcessor.setupID));
 					}
 					else System.out.println("Could not launch Browser! Please type the following address into your browser: https://localhost/setup?"+HTTPProcessor.setupID);
 				}

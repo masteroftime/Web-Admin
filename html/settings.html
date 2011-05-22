@@ -4,21 +4,22 @@
   <link href="/style/main.css" rel="stylesheet" type="text/css"/>
  </head>
  <body>
- <div class="main" id="smallpage">
- <div class="title">
-  <h1>MC Web Admin</h1>
- </div>
- <div>Configure your Web Admin account.</div>
- <form action="" method="post">
+  <div class="main" id="largepage">
+  <div class="title">
+   <h1>MC Web Admin</h1>
+  </div>
+  <h2>Web Admin Configuration</h2>
+  <form action="/config?change=user" method="post">
   <p>
+    <b><u>Change User:</u></b>
   	Username: <br>
   	<input type="text" name="username"/><br>
     Password: <br>
     <input type="password" name="password"/><br>
     Retype Password: <br>
-    <input type="password" name="retype"/>
+    <input type="password" name="retype"/><br>
+    <input type="submit"/>
   </p>
-  <input type="submit"/>
   </form>
   </div>
  </body>
