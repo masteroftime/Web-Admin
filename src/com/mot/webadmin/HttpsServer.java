@@ -43,7 +43,7 @@ public class HttpsServer extends Thread
 				SSLSocket socket = 
 					(SSLSocket) server.accept();
 
-				new HTTPProcessor(socket).start();
+				new HTTPProcessor(socket, true).start();
 			}
 
 		} catch (Exception e) {

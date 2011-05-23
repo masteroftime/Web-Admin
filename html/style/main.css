@@ -7,28 +7,25 @@
 	position:relative;
 	margin-left:auto;
 	margin-right:auto;
-	margin-top:auto;
-	margin-bottom:auto;
 	border: thin ridge #000;
 	background-color: #EEE;
 }
 body {
 	background-color: #999;
-
 }
 
 
 #smallpage {
 	margin-top:150px;
 	text-align: center;
-	width:350;
-	height:300;
+	width:350px;
+	height:300px;
 }
 
 #largepage {
 	text-align: center;
-	width:960;
-	height:550;
+	width:960px;
+	height:600px;
 }
 
 .title {

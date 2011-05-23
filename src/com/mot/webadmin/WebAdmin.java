@@ -30,6 +30,7 @@ public class WebAdmin extends JavaPlugin
 	
 	private MessageHandler logger;
 	private HttpsServer server;
+	private HttpServer http;
 	
 	public volatile static boolean exit = false;
 
@@ -37,6 +38,7 @@ public class WebAdmin extends JavaPlugin
 	public void onDisable() {
 		exit = true;
 		server.interrupt();
+		http.interrupt();
 		
 		getServer().getLogger().removeHandler(logger);
 		
@@ -64,6 +66,12 @@ public class WebAdmin extends JavaPlugin
 		plugin = this;
 		server = new HttpsServer();
 		server.start();
+		
+		if(HttpServer.active)
+		{
+			http = new HttpServer();
+			http.start();
+		}
 	}
 	
 	public void loadProperties()
@@ -78,6 +86,8 @@ public class WebAdmin extends JavaPlugin
 				HttpsServer.port = Integer.parseInt(prop.getProperty("https-port"));
 				HttpsServer.keystore = prop.getProperty("keystore");
 				HttpsServer.passwd = prop.getProperty("keystore-pass");
+				HttpServer.port = Integer.parseInt(prop.getProperty("http-port"));
+				HttpServer.active = Boolean.parseBoolean(prop.getProperty("use-http"));
 				HTTPProcessor.user = prop.getProperty("username");
 				HTTPProcessor.password = Base64Coder.decode(
 						prop.getProperty("password").toCharArray());
@@ -118,6 +128,8 @@ public class WebAdmin extends JavaPlugin
 		prop.setProperty("keystore-pass", HttpsServer.passwd);
 		prop.setProperty("username", HTTPProcessor.user);
 		prop.setProperty("password", new String(Base64Coder.encode(HTTPProcessor.password)));
+		prop.setProperty("http-port", ""+HttpServer.port);
+		prop.setProperty("use-http", ""+HttpServer.active);
 		try {
 			prop.store(new FileOutputStream("plugins/Web Admin/settings.properties"), "Web Admin Configuration file");
 		} catch (FileNotFoundException e) {

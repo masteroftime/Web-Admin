@@ -7,7 +7,7 @@ function reload(data)
 		$("#output").attr({ scrollTop: $("#output").attr("scrollHeight") });
 	});
 	
-	$.get("/cmdline", function(data) {
+	$.get("/cmdline?random="+Math.random(), function(data) {
 		reload(data);
 	});
 }

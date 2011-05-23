@@ -2,7 +2,7 @@
    "http://www.w3.org/TR/html4/loose.dtd">
 <html>
  <head>
-  <title>MC Web Console - Login</title>
+  <title>MC Web Console - Error</title>
   <link href="/style/main.css" rel="stylesheet" type="text/css"/>
  </head>
  <body>
@@ -10,12 +10,9 @@
   <div class="title">
    <h1>Error</h1>
   </div>
-  <h2 class="error">Page Not Found!</h2>
+  <p class="error"><b><!--@error--></b></p>
   <p>
-  	The requested page could not be found on the server.
-  </p>
-  <p>
-   <a href="/">Return to homepage</a>
+   <a href="javascript:history.go(-1);">Return</a>
   </p>
   </div>
  </body>
