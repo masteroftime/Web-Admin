@@ -11,6 +11,7 @@ import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.io.OutputStreamWriter;
 import java.net.Socket;
+import java.net.SocketException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
@@ -70,7 +71,12 @@ public class HTTPProcessor extends Thread implements CommandSender, ICommandList
 			BufferedReader reader = new BufferedReader(new InputStreamReader(in));
 			BufferedWriter writer = new BufferedWriter(new OutputStreamWriter(out));
 
-			String request = reader.readLine();
+			String request;
+			try {
+				request = reader.readLine();
+			} catch(IOException e) {
+				return;
+			}
 
 			if(request == null)
 			{
@@ -173,7 +179,9 @@ public class HTTPProcessor extends Thread implements CommandSender, ICommandList
 							}
 
 							session.setLastMessage(last);
-							writer.flush();
+							try {
+								writer.flush();
+							} catch (SocketException e) {}
 						}
 						else if(args[1].equals("/logout"))
 						{

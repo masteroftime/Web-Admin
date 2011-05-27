@@ -30,5 +30,5 @@ $('document').ready(function() {
 		$('#output').empty();
 	});
 	
-	reload("<div class='out'>Started MC Web Console v0.0</div>");
+	reload("<div class='out'>Started MC Web Console v0.1</div>");
 });

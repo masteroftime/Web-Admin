@@ -3,6 +3,8 @@ package com.mot.webadmin;
 import java.io.IOException;
 import java.net.ServerSocket;
 import java.net.Socket;
+import java.util.Random;
+import java.util.logging.Level;
 
 import javax.net.ServerSocketFactory;
 
@@ -19,7 +21,14 @@ public class HttpServer extends Thread
 	@Override
 	public void run() {
 		try {
-			ServerSocket server = new ServerSocket(port);
+			ServerSocket server = null;
+			try {
+				server = new ServerSocket(port);
+			} catch(IOException e) {
+				port = new Random().nextInt(30000)+20000;
+				WebAdmin.log.log(Level.WARNING, "HTTP port already taken! Chose port "+port);
+				server = new ServerSocket(port);
+			}
 			
 			while(!WebAdmin.exit && active)
 			{

@@ -16,6 +16,7 @@ import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.security.SecureRandom;
 import java.util.Properties;
+import java.util.logging.Logger;
 
 import net.minecraft.server.MinecraftServer;
 
@@ -27,6 +28,7 @@ public class WebAdmin extends JavaPlugin
 {
 	public static WebAdmin plugin;
 	public static MinecraftServer mcserver;
+	public static Logger log = Logger.getLogger("Minecraft");
 	
 	private MessageHandler logger;
 	private HttpsServer server;
@@ -88,32 +90,55 @@ public class WebAdmin extends JavaPlugin
 				HttpsServer.passwd = prop.getProperty("keystore-pass");
 				HttpServer.port = Integer.parseInt(prop.getProperty("http-port"));
 				HttpServer.active = Boolean.parseBoolean(prop.getProperty("use-http"));
-				HTTPProcessor.user = prop.getProperty("username");
-				HTTPProcessor.password = Base64Coder.decode(
-						prop.getProperty("password").toCharArray());
+				if(prop.getProperty("username").equals("") || prop.getProperty("password").equals(""))
+				{
+					SecureRandom r = new SecureRandom();
+					char id[] = new char[25];
+					
+					for(int i = 0; i < 25; i++)
+					{
+						id[i] = (char)('a' + r.nextInt(26));
+					}
+					
+					HTTPProcessor.setupID = new String(id);
+					
+					if(Desktop.isDesktopSupported())
+					{
+						Desktop d = Desktop.getDesktop();
+						if(d.isSupported(Action.BROWSE))
+						{
+							d.browse(new URI("https://localhost/setup?id="+HTTPProcessor.setupID));
+						}
+						else System.out.println("Could not launch Browser! Please type the following address into your browser: https://localhost/setup?"+HTTPProcessor.setupID);
+					}
+					else System.out.println("Could not launch Browser! Please type the following address into your browser: https://localhost/setup?"+HTTPProcessor.setupID);;
+				}
+				else
+				{
+					HTTPProcessor.user = prop.getProperty("username");
+					HTTPProcessor.password = Base64Coder.decode(
+							prop.getProperty("password").toCharArray());
+				}
 			}
 			else
 			{
-				SecureRandom r = new SecureRandom();
-				char id[] = new char[25];
-				
-				for(int i = 0; i < 25; i++)
-				{
-					id[i] = (char)('a' + r.nextInt(26));
+				Properties prop = new Properties();
+				prop.setProperty("https-port", "443");
+				prop.setProperty("keystore", "plugins/Web Admin/store.ks");
+				prop.setProperty("keystore-pass", "");
+				prop.setProperty("username", "");
+				prop.setProperty("password", "");
+				prop.setProperty("http-port", "80");
+				prop.setProperty("use-http", "true");
+				try {
+					prop.store(new FileOutputStream("plugins/Web Admin/settings.properties"), "Web Admin Configuration file. Do not set the password here. If you want to change it leave it empty.");
+				} catch (FileNotFoundException e) {
+					e.printStackTrace();
+				} catch (IOException e) {
+					e.printStackTrace();
 				}
-				
-				HTTPProcessor.setupID = new String(id);
-				
-				if(Desktop.isDesktopSupported())
-				{
-					Desktop d = Desktop.getDesktop();
-					if(d.isSupported(Action.BROWSE))
-					{
-						d.browse(new URI("https://localhost/setup?id="+HTTPProcessor.setupID));
-					}
-					else System.out.println("Could not launch Browser! Please type the following address into your browser: https://localhost/setup?"+HTTPProcessor.setupID);
-				}
-				else System.out.println("Could not launch Browser! Please type the following address into your browser: https://localhost/setup?"+HTTPProcessor.setupID);;
+				System.out.println("Please edit the Web Admin configuration and restart the server.");
+				getPluginLoader().disablePlugin(this);
 			}
 		} catch (Exception e) {
 			
