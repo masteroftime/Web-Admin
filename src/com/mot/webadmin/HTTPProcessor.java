@@ -138,7 +138,12 @@ public class HTTPProcessor extends Thread implements CommandSender, ICommandList
 				{				
 					if(session != null)
 					{
-						if(args[1].equals("/log"))
+						if(args[1].equals("/"))
+						{
+							session.setLastMessage(0);
+							sendFile(new File("plugins/Web Admin/html/index.html"));
+						}
+						else if(args[1].equals("/log"))
 						{
 							sendFile(new File("server.log"));
 						}
@@ -172,10 +177,13 @@ public class HTTPProcessor extends Thread implements CommandSender, ICommandList
 
 							int last = MessageHandler.last;
 
-							for(String msg : MessageHandler.getMessagesSince(session.getLastMessage()))
+							for(String msg : MessageHandler.getNewMessages(session))
 							{
-								writer.write(msg);
-								writer.newLine();
+								if(msg != null)
+								{
+									writer.write(msg);
+									writer.newLine();
+								}
 							}
 
 							session.setLastMessage(last);
@@ -390,6 +398,7 @@ public class HTTPProcessor extends Thread implements CommandSender, ICommandList
 						{
 							String command = post.get("command");
 							WebAdmin.mcserver.issueCommand(command, this);
+							MessageHandler.addMessage("> "+command, session);
 						}
 						else if(args[1].startsWith("/config"))
 						{
@@ -688,6 +697,6 @@ public class HTTPProcessor extends Thread implements CommandSender, ICommandList
 	@Override
 	public void sendMessage(String msg) 
 	{
-		MessageHandler.addMessage(msg);
+		MessageHandler.addMessage(msg, session);
 	}
 }

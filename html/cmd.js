@@ -16,12 +16,7 @@ $('document').ready(function() {
 	
 	$('#form').submit(function (event) {
 		event.preventDefault();
-		
-		var item = $("<div class='out'> >"+$('#input').val()+"</div>");
-		item.appendTo('#output');
-		item.slideDown('fast');
 		$.post("/command", "command="+$('#input').val());
-		
 		$('#input').val("");
 	});
 	

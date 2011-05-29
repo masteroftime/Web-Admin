@@ -3,12 +3,14 @@ package com.mot.webadmin;
 import java.text.DateFormat;
 import java.util.ArrayList;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.logging.Handler;
 import java.util.logging.LogRecord;
 
 public class MessageHandler extends Handler
 {
-	public static ArrayList<String> messages = new ArrayList<String>();
+	private static ArrayList<String> messages = new ArrayList<String>();
+	private static ArrayList<String> receivers = new ArrayList<String>();
 	public static ArrayList<HTTPProcessor> waiting = new ArrayList<HTTPProcessor>();
 	
 	public static volatile int last = -1;
@@ -29,14 +31,17 @@ public class MessageHandler extends Handler
 		addRecord(record);
 	}
 
-	public static String[] getMessagesSince(int last)
+	public static String[] getNewMessages(Session s)
 	{		
-		String[] erg = new String[messages.size()-(last+1)];
+		String[] erg = new String[messages.size()-(s.getLastMessage()+1)];
 		
 		for(int i = 0; i < erg.length; i++)
 		{
 			//last + 1 is the first new message. +i then loops through the recent messages
-			erg[i] = messages.get(last + 1 + i);
+			if(receivers.get(s.getLastMessage() + 1 + i) == null || receivers.get(s.getLastMessage() + 1 + i).equals(s.getID()))
+			{
+				erg[i] = messages.get(s.getLastMessage() + 1 + i);
+			}
 		}
 		
 		return erg;
@@ -50,6 +55,21 @@ public class MessageHandler extends Handler
 	public static void addMessage(String message)
 	{
 		messages.add("<div class='out'>"+message+"</div>");
+		receivers.add(null);
+		last++;
+		
+		for(HTTPProcessor p : waiting)
+		{
+			synchronized (p) {
+				p.notify();
+			}
+		}
+	}
+	
+	public static void addMessage(String message, Session session)
+	{
+		messages.add("<div class='out'>"+message+"</div>");
+		receivers.add(session.getID());
 		last++;
 		
 		for(HTTPProcessor p : waiting)
