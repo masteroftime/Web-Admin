@@ -23,7 +23,8 @@ import javax.net.ssl.SSLSocket;
 public class HttpsServer extends Thread
 {
 	public static String keystore = "plugins/Web Admin/store.ks";
-	public static String passwd = "keypwd";
+	public static char[] storepwd;
+	public static char[] keypwd;
 	public static int port = 443;
 	
 	public HttpsServer()
@@ -39,7 +40,7 @@ public class HttpsServer extends Thread
 			KeyStore ks = KeyStore.getInstance("JKS");
 			if(new File(keystore).exists())
 			{
-				ks.load(new FileInputStream(keystore), passwd.toCharArray());
+				ks.load(new FileInputStream(keystore), storepwd);
 			}
 			else
 			{
@@ -48,7 +49,7 @@ public class HttpsServer extends Thread
 			}
 
 			KeyManagerFactory kmf = KeyManagerFactory.getInstance("SunX509");
-			kmf.init(ks, passwd.toCharArray());
+			kmf.init(ks, keypwd);
 
 			SSLContext context = SSLContext.getInstance("TLS");
 			context.init(kmf.getKeyManagers(), null, null);

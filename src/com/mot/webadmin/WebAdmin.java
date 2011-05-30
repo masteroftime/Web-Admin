@@ -2,6 +2,7 @@ package com.mot.webadmin;
 
 import java.awt.Desktop;
 import java.awt.Desktop.Action;
+import java.awt.RenderingHints.Key;
 import java.io.BufferedReader;
 import java.io.Console;
 import java.io.File;
@@ -15,8 +16,24 @@ import java.net.URI;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.security.SecureRandom;
+import java.security.spec.AlgorithmParameterSpec;
 import java.util.Properties;
+import java.util.logging.Level;
 import java.util.logging.Logger;
+
+import javax.crypto.Cipher;
+import javax.crypto.KeyGenerator;
+import javax.crypto.NoSuchPaddingException;
+import javax.crypto.SecretKey;
+import javax.crypto.spec.IvParameterSpec;
+import javax.crypto.spec.SecretKeySpec;
+import javax.swing.BoxLayout;
+import javax.swing.JButton;
+import javax.swing.JCheckBox;
+import javax.swing.JFrame;
+import javax.swing.JLabel;
+import javax.swing.JOptionPane;
+import javax.swing.JPanel;
 
 import net.minecraft.server.MinecraftServer;
 
@@ -33,6 +50,8 @@ public class WebAdmin extends JavaPlugin
 	private MessageHandler logger;
 	private HttpsServer server;
 	private HttpServer http;
+	
+	private static boolean savePassword;
 	
 	public volatile static boolean exit = false;
 
@@ -83,15 +102,52 @@ public class WebAdmin extends JavaPlugin
 		try {
 			if(p.exists())
 			{
+				boolean save = false;
 				Properties prop = new Properties();
 				prop.load(new FileInputStream(p));
 				HttpsServer.port = Integer.parseInt(prop.getProperty("https-port"));
 				HttpsServer.keystore = prop.getProperty("keystore");
-				HttpsServer.passwd = prop.getProperty("keystore-pass");
+				//HttpsServer.passwd = prop.getProperty("keystore-pass");
 				HttpServer.port = Integer.parseInt(prop.getProperty("http-port"));
 				HttpServer.active = Boolean.parseBoolean(prop.getProperty("use-http"));
+				String storepwd = prop.getProperty("keystore-pass");
+				String keypwd = prop.getProperty("keypass");
+				
+				if(storepwd.equals(""))
+				{
+					//log.log(Level.WARNING, "Web Admin: Please specify the keystore password in the configuration file");
+					storepwd = JOptionPane.showInputDialog("Please enter the keystore password");
+				}
+				if(storepwd.startsWith("-"))
+				{
+					byte[] enc = Base64Coder.decode(storepwd.substring(1).toCharArray());
+					HttpsServer.storepwd = decrypt(enc);
+				}
+				else
+				{
+					HttpsServer.storepwd = storepwd.toCharArray();
+					save=true;
+				}
+				
+				if(keypwd.equals(""))
+				{
+					//log.log(Level.WARNING, "Web Admin: Please specify the keystore password in the configuration file");
+					keypwd = JOptionPane.showInputDialog("Please enter the key password");
+				}
+				if(keypwd.startsWith("-"))
+				{
+					byte[] enc = Base64Coder.decode(keypwd.substring(1).toCharArray());
+					HttpsServer.keypwd = decrypt(enc);
+				}
+				else
+				{
+					HttpsServer.keypwd = keypwd.toCharArray();
+					save=true;
+				}
+				
 				if(prop.getProperty("username").equals("") || prop.getProperty("password").equals(""))
 				{
+					save = false;
 					SecureRandom r = new SecureRandom();
 					char id[] = new char[25];
 					
@@ -119,6 +175,10 @@ public class WebAdmin extends JavaPlugin
 					HTTPProcessor.password = Base64Coder.decode(
 							prop.getProperty("password").toCharArray());
 				}
+				if(save)
+				{
+					saveProperties();
+				}
 			}
 			else
 			{
@@ -126,6 +186,7 @@ public class WebAdmin extends JavaPlugin
 				prop.setProperty("https-port", "443");
 				prop.setProperty("keystore", "plugins/Web Admin/store.ks");
 				prop.setProperty("keystore-pass", "");
+				prop.setProperty("keypass",	"");
 				prop.setProperty("username", "");
 				prop.setProperty("password", "");
 				prop.setProperty("http-port", "80");
@@ -150,7 +211,8 @@ public class WebAdmin extends JavaPlugin
 		Properties prop = new Properties();
 		prop.setProperty("https-port", ""+HttpsServer.port);
 		prop.setProperty("keystore", HttpsServer.keystore);
-		prop.setProperty("keystore-pass", HttpsServer.passwd);
+		prop.setProperty("keystore-pass", "-" + new String(Base64Coder.encode(encrypt(new String(HttpsServer.storepwd)))));
+		prop.setProperty("keypass", "-" + new String(Base64Coder.encode(encrypt(new String(HttpsServer.keypwd)))));
 		prop.setProperty("username", HTTPProcessor.user);
 		prop.setProperty("password", new String(Base64Coder.encode(HTTPProcessor.password)));
 		prop.setProperty("http-port", ""+HttpServer.port);
@@ -170,6 +232,44 @@ public class WebAdmin extends JavaPlugin
 			MessageDigest md = MessageDigest.getInstance("SHA-256");
 			return md.digest(password.getBytes("UTF-8"));
 		} catch (Exception e) {
+			e.printStackTrace();
+		}
+		return null;
+	}
+	
+	public static byte[] encrypt(String password)
+	{
+		try {
+			Cipher c = Cipher.getInstance("AES");
+			
+			SecretKeySpec spec = new SecretKeySpec(new byte[] {
+					0x34, 0x52, (byte) 0xA3, (byte) 0x97, (byte) 0xF2, 0x32, 0x56, 0x21,
+					0x23, (byte) 0xE3, 0x78, (byte) 0xBC, 0x26, 0x5D, 0x6A, (byte) 0xD3
+			}, "AES");
+			c.init(Cipher.ENCRYPT_MODE, spec);
+			return c.doFinal(password.getBytes("UTF-8"));
+			
+		} catch (Exception e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+		return null;
+	}
+	
+	public static char[] decrypt(byte[] password)
+	{
+		try {
+			Cipher c = Cipher.getInstance("AES");
+			
+			SecretKeySpec spec = new SecretKeySpec(new byte[] {
+					0x34, 0x52, (byte) 0xA3, (byte) 0x97, (byte) 0xF2, 0x32, 0x56, 0x21,
+					0x23, (byte) 0xE3, 0x78, (byte) 0xBC, 0x26, 0x5D, 0x6A, (byte) 0xD3
+			}, "AES");
+			c.init(Cipher.DECRYPT_MODE, spec);
+			return new String(c.doFinal(password), "UTF-8").toCharArray();
+			
+		} catch (Exception e) {
+			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
 		return null;

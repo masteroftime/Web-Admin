@@ -18,8 +18,12 @@ MC Web Admin allows you to connect to a bukkit server with your web browser via 
 4) Create a keystore and a key for the https server with the following command
 
    keytool -genkey -alias serverKey -keyalg RSA -keystore store.ks
+   
+   You can export a certificate for your server and install it in your browser to remove the security warning messages.
+
+   keytool -export -alias serverKey -file server.crt -keystore store.ks
 
 5) Set the keystore password in the settings file and adjust the server settings.
-   Changing the user password in the config file will only give errors. If you want to change the password just clear the content of the password field.
+   Do not change the password directly in the config file. If you want to change the password clear the content of the password field or change it on the Web Admin settings page.
 
 6) Start the bukkit server. This will launch your default Browser and display a setup page. Enter a username and password to access Web Admin. If you don't enter a login the page will display again the next time you start bukkit.
